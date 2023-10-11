@@ -19,6 +19,7 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"github.com/pkg/errors"
+	"github.com/bradfitz/gomemcache/memcache"
 )
 
 var (
@@ -47,6 +48,7 @@ const (
 
 type Handler struct {
 	DB *sqlx.DB
+	mc *memcache.Client
 }
 
 func main() {
