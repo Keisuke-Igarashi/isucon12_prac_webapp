@@ -434,14 +434,20 @@ func (h *Handler) obtainPresent(tx *sqlx.Tx, userID int64, requestAt int64) ([]*
 		return nil, err
 	}
 
-	// user_present_all_received_historyのリストを作る
-	userPresentAllReceivedHistorys := make([]*UserPresentAllReceivedHistory, 0, len(normalPresents))
+	// present_all_idのリストを作る
+	presentAllIds := make([]int, 0, len(normalPresents))
 
+	for _,p := range normalPresents {
+		presentAllIds = append(presentAllIds, p.id)
+	}
 
+	// user_present_all
 	obtainPresents := make([]*UserPresent, 0)
 	for _, np := range normalPresents {
 		received := new(UserPresentAllReceivedHistory)
-		query = "SELECT * FROM user_present_all_received_history WHERE user_id=? AND present_all_id=?"
+		//query = "SELECT * FROM user_present_all_received_history WHERE user_id=? AND present_all_id=?"
+		query = "SELECT * FROM user_present_all_received_history WHERE user_id=? AND present_all_id IN ("+strings.Join(presentAllIds,",")+")"
+		
 		err := tx.Get(received, query, userID, np.ID)
 		if err == nil {
 			// プレゼント配布済
