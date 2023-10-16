@@ -19,6 +19,7 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"github.com/pkg/errors"
+        "github.com/bradfitz/gomemcache/memcache"
 )
 
 var (
@@ -49,6 +50,8 @@ type Handler struct {
 	DB *sqlx.DB
 }
 
+var mc *memcache.Client
+
 func main() {
 	rand.Seed(time.Now().UnixNano())
 	time.Local = time.FixedZone("Local", 9*60*60)
@@ -67,6 +70,9 @@ func main() {
 		e.Logger.Fatalf("failed to connect to db: %v", err)
 	}
 	defer dbx.Close()
+
+        // connect to memcached
+	mc = memcache.New("127.0.0.1:11211")
 
 	e.Server.Addr = fmt.Sprintf(":%v", "8080")
 	h := &Handler{
