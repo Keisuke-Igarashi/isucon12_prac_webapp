@@ -1296,10 +1296,10 @@ func (h *Handler) receivePresent(c echo.Context) error {
 	defer tx.Rollback() //nolint:errcheck
 
         // obtainPresentのid一覧の作成
-	obtainPresentIds := make([]string, 0, len(obtainPresent))
-	for _, p := range obtainPresent {
-		obtainPresentIds = append(obtainPresentIds, string(p.ID))
-	}
+	// obtainPresentIds := make([]string, 0, len(obtainPresent))
+	// for _, p := range obtainPresent {
+	// 	obtainPresentIds = append(obtainPresentIds, string(p.ID))
+	// }
 
 	// 配布処理
 	for i := range obtainPresent {
@@ -1310,11 +1310,11 @@ func (h *Handler) receivePresent(c echo.Context) error {
 		obtainPresent[i].UpdatedAt = requestAt
 		obtainPresent[i].DeletedAt = &requestAt
 		v := obtainPresent[i]
-		// query = "UPDATE user_presents SET deleted_at=?, updated_at=? WHERE id=?"
+		query = "UPDATE user_presents SET deleted_at=?, updated_at=? WHERE id=?"
 	        // n+1の解消
-		query = "UPDATE user_presents SET deleted_at=?, updated_at=? WHERE id IN ("+strings.Join(obtainPresentIds,",")+")"
-		// _, err := tx.Exec(query, requestAt, requestAt, v.ID)
-		_, err := tx.Exec(query, requestAt, requestAt)
+		// query = "UPDATE user_presents SET deleted_at=?, updated_at=? WHERE id IN ("+strings.Join(obtainPresentIds,",")+")"
+		_, err := tx.Exec(query, requestAt, requestAt, v.ID)
+		// _, err := tx.Exec(query, requestAt, requestAt)
 		if err != nil {
 			return errorResponse(c, http.StatusInternalServerError, err)
 		}
