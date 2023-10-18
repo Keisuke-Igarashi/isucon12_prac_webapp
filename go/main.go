@@ -12,14 +12,14 @@ import (
 	"os/exec"
 	"strconv"
 	"time"
-
+        "strings"
 	"github.com/go-sql-driver/mysql"
 	"github.com/google/uuid"
 	"github.com/jmoiron/sqlx"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"github.com/pkg/errors"
-        "github.com/bradfitz/gomemcache/memcache"
+        // "github.com/bradfitz/gomemcache/memcache"
 )
 
 var (
@@ -50,7 +50,7 @@ type Handler struct {
 	DB *sqlx.DB
 }
 
-var mc *memcache.Client
+// var mc *memcache.Client
 
 func main() {
 	rand.Seed(time.Now().UnixNano())
@@ -72,7 +72,7 @@ func main() {
 	defer dbx.Close()
 
         // connect to memcached
-	mc = memcache.New("127.0.0.1:11211")
+	// mc = memcache.New("127.0.0.1:11211")
 
 	e.Server.Addr = fmt.Sprintf(":%v", "8080")
 	h := &Handler{
@@ -441,20 +441,21 @@ func (h *Handler) obtainPresent(tx *sqlx.Tx, userID int64, requestAt int64) ([]*
 	}
 
 	// present_all_idのリストを作る
-	presentAllIds := make([]int, 0, len(normalPresents))
+	// presentAllIds := make([]string, 0, len(normalPresents))
 
-	for _,p := range normalPresents {
-		presentAllIds = append(presentAllIds, p.id)
-	}
+	// for _,p := range normalPresents {
+	// 	presentAllIds = append(presentAllIds, string(p.ID))
+	// }
 
 	// user_present_all
 	obtainPresents := make([]*UserPresent, 0)
 	for _, np := range normalPresents {
 		received := new(UserPresentAllReceivedHistory)
-		//query = "SELECT * FROM user_present_all_received_history WHERE user_id=? AND present_all_id=?"
-		query = "SELECT * FROM user_present_all_received_history WHERE user_id=? AND present_all_id IN ("+strings.Join(presentAllIds,",")+")"
+		query = "SELECT * FROM user_present_all_received_history WHERE user_id=? AND present_all_id=?"
+		// query = "SELECT * FROM user_present_all_received_history WHERE user_id=? AND present_all_id IN ("+strings.Join(presentAllIds,",")+")"
 		
 		err := tx.Get(received, query, userID, np.ID)
+		// err := tx.Get(received, query, userID)
 		if err == nil {
 			// プレゼント配布済
 			continue
@@ -1294,6 +1295,12 @@ func (h *Handler) receivePresent(c echo.Context) error {
 	}
 	defer tx.Rollback() //nolint:errcheck
 
+        // obtainPresentのid一覧の作成
+	obtainPresentIds := make([]string, 0, len(obtainPresent))
+	for _, p := range obtainPresent {
+		obtainPresentIds = append(obtainPresentIds, string(p.ID))
+	}
+
 	// 配布処理
 	for i := range obtainPresent {
 		if obtainPresent[i].DeletedAt != nil {
@@ -1303,8 +1310,11 @@ func (h *Handler) receivePresent(c echo.Context) error {
 		obtainPresent[i].UpdatedAt = requestAt
 		obtainPresent[i].DeletedAt = &requestAt
 		v := obtainPresent[i]
-		query = "UPDATE user_presents SET deleted_at=?, updated_at=? WHERE id=?"
-		_, err := tx.Exec(query, requestAt, requestAt, v.ID)
+		// query = "UPDATE user_presents SET deleted_at=?, updated_at=? WHERE id=?"
+	        // n+1の解消
+		query = "UPDATE user_presents SET deleted_at=?, updated_at=? WHERE id IN ("+strings.Join(obtainPresentIds,",")+")"
+		// _, err := tx.Exec(query, requestAt, requestAt, v.ID)
+		_, err := tx.Exec(query, requestAt, requestAt)
 		if err != nil {
 			return errorResponse(c, http.StatusInternalServerError, err)
 		}
