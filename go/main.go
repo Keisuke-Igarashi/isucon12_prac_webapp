@@ -452,7 +452,7 @@ func (h *Handler) obtainPresent(tx *sqlx.Tx, userID int64, requestAt int64) ([]*
 	for _, np := range normalPresents {
 		received := new(UserPresentAllReceivedHistory)
 		// query = "SELECT * FROM user_present_all_received_history WHERE user_id=? AND present_all_id=?"
-		query = "SELECT id  FROM user_present_all_received_history WHERE user_id=? AND present_all_id=?"
+		query = "SELECT user_id FROM user_present_all_received_history WHERE user_id=? AND present_all_id=?"
 		// query = "SELECT * FROM user_present_all_received_history WHERE user_id=? AND present_all_id IN ("+strings.Join(presentAllIds,",")+")"
 		
 		err := tx.Get(received, query, userID, np.ID)
