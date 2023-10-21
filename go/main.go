@@ -1310,7 +1310,7 @@ func (h *Handler) receivePresent(c echo.Context) error {
 
 		obtainPresent[i].UpdatedAt = requestAt
 		obtainPresent[i].DeletedAt = &requestAt
-		v := obtainPresent[i]
+//		v := obtainPresent[i]
 //		query = "UPDATE user_presents SET deleted_at=?, updated_at=? WHERE id=?"
 //		_, err := tx.Exec(query, requestAt, requestAt, v.ID)
 //		if err != nil {
@@ -1329,14 +1329,14 @@ func (h *Handler) receivePresent(c echo.Context) error {
 //		}
 	}
         // リストを作成する
-	deletedAts := make([]int, 0)
-	updatedAts := make([]int, 0)
-	obtainPresentids := make([]int, 0)
+	deletedAts := make([]string, 0)
+	updatedAts := make([]string, 0)
+	obtainPresentids := make([]string, 0)
 
 	for _, i := range obtainPresent {
-		deletedAts = append(deletedAts, obtainPresent[i].DeletedAt)
-		updatedAts = append(updatedAts, obtainPresent[i].UpdatedAt)
-		obtainPresentids = append(obtainPresentids, obtainPresent[i].id)
+		deletedAts = append(deletedAts, string(obtainPresent[i].DeletedAt))
+		updatedAts = append(updatedAts, string(obtainPresent[i].UpdatedAt))
+		obtainPresentids = append(obtainPresentids, string(obtainPresent[i].id))
 	}
 
 	fmt.Printf("%v\n", deletedAts)
