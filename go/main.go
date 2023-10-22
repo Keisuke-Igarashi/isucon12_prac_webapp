@@ -1356,7 +1356,7 @@ func (h *Handler) receivePresent(c echo.Context) error {
 
 	// sql実行をIN仕様に直す		
 	// query = "UPDATE user_presents SET deleted_at IN (?), updated_at IN (?) WHERE id IN (?)"
-	query, params, err = tx.Exec(query)
+	_, err = tx.Exec(query)
 	if err != nil {
 		return errorResponse(c, http.StatusInternalServerError, err)
 	}
