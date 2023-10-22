@@ -1298,6 +1298,7 @@ func (h *Handler) receivePresent(c echo.Context) error {
 
     // リストを作成する
 	updatedAts := make([]int64, 0)
+	deletedAts := make([]int64, 0)
 	obtainPresentids := make([]int64, 0)
 
 
@@ -1338,8 +1339,7 @@ func (h *Handler) receivePresent(c echo.Context) error {
 	fmt.Printf("%v\n", updatedAts)
 	fmt.Printf("%v\n", obtainPresentids)
 
-	// sql実行をIN仕様に直す
-		
+	// sql実行をIN仕様に直す		
 	query = "UPDATE user_presents SET deleted_at IN (?), updated_at IN (?) WHERE id IN (?)"
 	query, params, err = sqlx.In(query, deletedAts, updatedAts, obtainPresentids)
 	if err != nil {
