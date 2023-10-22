@@ -1335,13 +1335,28 @@ func (h *Handler) receivePresent(c echo.Context) error {
 		}
 	}
 
-	fmt.Printf("%v\n", deletedAts)
-	fmt.Printf("%v\n", updatedAts)
-	fmt.Printf("%v\n", obtainPresentids)
+	fmt.Printf("deletedAts + %v\n", deletedAts)
+	fmt.Printf("updatedAts + %v\n", updatedAts)
+	fmt.Printf("obtainPresentids + %v\n", obtainPresentids)
+
+	deletedAtss := strings.Join(deletedAts, ",")
+	updatedAtss := strings.Join(updatedAts, ",")
+	obtainPresentidss := strings.Join(obtainPresentids, ",")
+
+	// 一括更新sqlを作成
+	query = fmt.Sprintf(`
+	UPDATE user_presents
+	SET
+		deleted_at = ELT(FIELD(id, %s), %s),
+		updated_at = ELT(FIELD(id, %s), %s)
+	WHERE id IN (%s)
+	`, obtainPresentidss, deletedAtss, obtainPresentidss, updatedAtss, obtainPresentidss)
+
+	fmt.Printf("update_bulk_query + %v\n", query)
 
 	// sql実行をIN仕様に直す		
-	query = "UPDATE user_presents SET deleted_at IN (?), updated_at IN (?) WHERE id IN (?)"
-	query, params, err = sqlx.In(query, deletedAts, updatedAts, obtainPresentids)
+	// query = "UPDATE user_presents SET deleted_at IN (?), updated_at IN (?) WHERE id IN (?)"
+	query, params, err = tx.Exec(query)
 	if err != nil {
 		return errorResponse(c, http.StatusInternalServerError, err)
 	}
