@@ -1351,6 +1351,10 @@ func (h *Handler) receivePresent(c echo.Context) error {
 		return errorResponse(c, http.StatusInternalServerError, err)
 	}
 
+	return successResponse(c, &ReceivePresentResponse{
+		UpdatedResources: makeUpdatedResources(requestAt, nil, nil, nil, nil, nil, nil, obtainPresent),
+	})
+
 }
 
 type ReceivePresentRequest struct {
