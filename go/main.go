@@ -1335,9 +1335,10 @@ func (h *Handler) receivePresent(c echo.Context) error {
 		}
 	}
 
-	fmt.Printf("deletedAts + %v\n", deletedAts)
-	fmt.Printf("updatedAts + %v\n", updatedAts)
-	fmt.Printf("obtainPresentids + %v\n", obtainPresentids)
+	fmt.Printf("ここからリスト一覧")
+	fmt.Printf(deletedAts)
+	fmt.Printf(updatedAts)
+	fmt.Printf(obtainPresentids)
 
 	deletedAtss := strings.Join(deletedAts, ",")
 	updatedAtss := strings.Join(updatedAts, ",")
@@ -1352,7 +1353,7 @@ func (h *Handler) receivePresent(c echo.Context) error {
 	WHERE id IN (%s)
 	`, obtainPresentidss, deletedAtss, obtainPresentidss, updatedAtss, obtainPresentidss)
 
-	fmt.Printf("update_bulk_query + %s\n", query)
+	fmt.Printf("update_bulk_query : %s\n", query)
 
 	// sql実行をIN仕様に直す		
 	// query = "UPDATE user_presents SET deleted_at IN (?), updated_at IN (?) WHERE id IN (?)"
