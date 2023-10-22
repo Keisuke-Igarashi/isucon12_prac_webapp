@@ -1296,11 +1296,10 @@ func (h *Handler) receivePresent(c echo.Context) error {
 	}
 	defer tx.Rollback() //nolint:errcheck
 
-        // obtainPresentのid一覧の作成
-	// obtainPresentIds := make([]string, 0, len(obtainPresent))
-	// for _, p := range obtainPresent {
-	// 	obtainPresentIds = append(obtainPresentIds, string(p.ID))
-	// }
+    // リストを作成する
+	updatedAts := make([]int64, 0)
+	obtainPresentids := make([]int64, 0)
+
 
 	// 配布処理
 	for i := range obtainPresent {
@@ -1317,6 +1316,12 @@ func (h *Handler) receivePresent(c echo.Context) error {
 //			return errorResponse(c, http.StatusInternalServerError, err)
 //		}
 //
+
+		// リストに値を追加する
+		updatedAts = append(updatedAts, obtainPresent[i].UpdatedAt)
+		deletedAts = append(deletedAts, obtainPresent[i].UpdatedAt)
+		obtainPresentids = append(obtainPresentids, obtainPresent[i].ID)
+
 		_, _, _, err = h.obtainItem(tx, v.UserID, v.ItemID, v.ItemType, int64(v.Amount), requestAt)
 		if err != nil {
 			if err == ErrUserNotFound || err == ErrItemNotFound {
@@ -1327,16 +1332,6 @@ func (h *Handler) receivePresent(c echo.Context) error {
 			}
 			return errorResponse(c, http.StatusInternalServerError, err)
 		}
-	}
-        // リストを作成する
-	deletedAts := make([]int64, 0)
-	updatedAts := make([]int64, 0)
-	obtainPresentids := make([]int64, 0)
-
-	for i := range obtainPresent {
-		updatedAts = append(updatedAts, obtainPresent[i].UpdatedAt)
-		deletedAts = append(deletedAts, obtainPresent[i].UpdatedAt)
-		obtainPresentids = append(obtainPresentids, obtainPresent[i].ID)
 	}
 
 	fmt.Printf("%v\n", deletedAts)
