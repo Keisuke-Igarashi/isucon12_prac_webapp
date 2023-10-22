@@ -1310,33 +1310,33 @@ func (h *Handler) receivePresent(c echo.Context) error {
 
 		obtainPresent[i].UpdatedAt = requestAt
 		obtainPresent[i].DeletedAt = &requestAt
-//		v := obtainPresent[i]
+		v := obtainPresent[i]
 //		query = "UPDATE user_presents SET deleted_at=?, updated_at=? WHERE id=?"
 //		_, err := tx.Exec(query, requestAt, requestAt, v.ID)
 //		if err != nil {
 //			return errorResponse(c, http.StatusInternalServerError, err)
 //		}
 //
-//		_, _, _, err = h.obtainItem(tx, v.UserID, v.ItemID, v.ItemType, int64(v.Amount), requestAt)
-//		if err != nil {
-//			if err == ErrUserNotFound || err == ErrItemNotFound {
-//				return errorResponse(c, http.StatusNotFound, err)
-//			}
-//			if err == ErrInvalidItemType {
-//				return errorResponse(c, http.StatusBadRequest, err)
-//			}
-//			return errorResponse(c, http.StatusInternalServerError, err)
-//		}
+		_, _, _, err = h.obtainItem(tx, v.UserID, v.ItemID, v.ItemType, int64(v.Amount), requestAt)
+		if err != nil {
+			if err == ErrUserNotFound || err == ErrItemNotFound {
+				return errorResponse(c, http.StatusNotFound, err)
+		}
+			if err == ErrInvalidItemType {
+				return errorResponse(c, http.StatusBadRequest, err)
+			}
+			return errorResponse(c, http.StatusInternalServerError, err)
+		}
 	}
         // リストを作成する
-	deletedAts := make([]string, 0)
-	updatedAts := make([]string, 0)
-	obtainPresentids := make([]string, 0)
+	deletedAts := make([]int64, 0)
+	updatedAts := make([]int64, 0)
+	obtainPresentids := make([]int64, 0)
 
-	for _, i := range obtainPresent {
-		deletedAts = append(deletedAts, string(obtainPresent[i].DeletedAt))
-		updatedAts = append(updatedAts, string(obtainPresent[i].UpdatedAt))
-		obtainPresentids = append(obtainPresentids, string(obtainPresent[i].id))
+	for i := range obtainPresent {
+		updatedAts = append(updatedAts, obtainPresent[i].UpdatedAt)
+		deletedAts = append(deletedAts, obtainPresent[i].UpdatedAt)
+		obtainPresentids = append(obtainPresentids, obtainPresent[i].ID)
 	}
 
 	fmt.Printf("%v\n", deletedAts)
@@ -1346,29 +1346,11 @@ func (h *Handler) receivePresent(c echo.Context) error {
 	// sql実行をIN仕様に直す
 		
 	query = "UPDATE user_presents SET deleted_at IN (?), updated_at IN (?) WHERE id IN (?)"
-	query, params,  err := sqlx.In(query, deletedAts, deletedAts, obtainPresentids)
+	query, params, err = sqlx.In(query, deletedAts, updatedAts, obtainPresentids)
 	if err != nil {
 		return errorResponse(c, http.StatusInternalServerError, err)
 	}
 
-	_, _, _, err = h.obtainItem(tx, v.UserID, v.ItemID, v.ItemType, int64(v.Amount), requestAt)
-	if err != nil {
-		if err == ErrUserNotFound || err == ErrItemNotFound {
-			return errorResponse(c, http.StatusNotFound, err)
-		}
-		if err == ErrInvalidItemType {
-			return errorResponse(c, http.StatusBadRequest, err)
-		}
-		return errorResponse(c, http.StatusInternalServerError, err)
-	}
-	err = tx.Commit()
-	if err != nil {
-		return errorResponse(c, http.StatusInternalServerError, err)
-	}
-
-	return successResponse(c, &ReceivePresentResponse{
-		UpdatedResources: makeUpdatedResources(requestAt, nil, nil, nil, nil, nil, nil, obtainPresent),
-	})
 }
 
 type ReceivePresentRequest struct {
