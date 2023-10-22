@@ -1352,7 +1352,7 @@ func (h *Handler) receivePresent(c echo.Context) error {
 	WHERE id IN (%s)
 	`, obtainPresentidss, deletedAtss, obtainPresentidss, updatedAtss, obtainPresentidss)
 
-	fmt.Printf("update_bulk_query + %v\n", query)
+	fmt.Printf("update_bulk_query + %s\n", query)
 
 	// sql実行をIN仕様に直す		
 	// query = "UPDATE user_presents SET deleted_at IN (?), updated_at IN (?) WHERE id IN (?)"
