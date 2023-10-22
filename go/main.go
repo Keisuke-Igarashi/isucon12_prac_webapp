@@ -12,7 +12,7 @@ import (
 	"os/exec"
 	"strconv"
 	"time"
-        // "strings"
+    "strings"
 	"github.com/go-sql-driver/mysql"
 	"github.com/google/uuid"
 	"github.com/jmoiron/sqlx"
@@ -1297,9 +1297,9 @@ func (h *Handler) receivePresent(c echo.Context) error {
 	defer tx.Rollback() //nolint:errcheck
 
     // リストを作成する
-	updatedAts := make([]int64, 0)
-	deletedAts := make([]int64, 0)
-	obtainPresentids := make([]int64, 0)
+	updatedAts := make([]string, 0)
+	deletedAts := make([]string, 0)
+	obtainPresentids := make([]string, 0)
 
 
 	// 配布処理
@@ -1319,9 +1319,9 @@ func (h *Handler) receivePresent(c echo.Context) error {
 //
 
 		// リストに値を追加する
-		updatedAts = append(updatedAts, obtainPresent[i].UpdatedAt)
-		deletedAts = append(deletedAts, obtainPresent[i].UpdatedAt)
-		obtainPresentids = append(obtainPresentids, obtainPresent[i].ID)
+		updatedAts = append(updatedAts, string(obtainPresent[i].UpdatedAt))
+		deletedAts = append(deletedAts, string(obtainPresent[i].UpdatedAt))
+		obtainPresentids = append(obtainPresentids, string(obtainPresent[i].ID))
 
 		_, _, _, err = h.obtainItem(tx, v.UserID, v.ItemID, v.ItemType, int64(v.Amount), requestAt)
 		if err != nil {
