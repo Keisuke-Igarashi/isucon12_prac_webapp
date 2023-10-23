@@ -1336,9 +1336,9 @@ func (h *Handler) receivePresent(c echo.Context) error {
 	}
 
 	fmt.Printf("ここからリスト一覧")
-	fmt.Printf(deletedAts)
-	fmt.Printf(updatedAts)
-	fmt.Printf(obtainPresentids)
+	fmt.Printf("%v\n", deletedAts)
+	fmt.Printf("%v\n", updatedAts)
+	fmt.Printf("%v\n", obtainPresentids)
 
 	deletedAtss := strings.Join(deletedAts, ",")
 	updatedAtss := strings.Join(updatedAts, ",")
