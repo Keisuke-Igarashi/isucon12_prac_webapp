@@ -1319,8 +1319,8 @@ func (h *Handler) receivePresent(c echo.Context) error {
 //
 
 		// リストに値を追加する
-		updatedAts = append(updatedAts, string(obtainPresent[i].UpdatedAt))
-		deletedAts = append(deletedAts, string(obtainPresent[i].UpdatedAt))
+		updatedAts = append(updatedAts, "'" + string(obtainPresent[i].UpdatedAt) + "'")
+		deletedAts = append(deletedAts, "'" + string(obtainPresent[i].UpdatedAt) + "'")
 		obtainPresentids = append(obtainPresentids, string(obtainPresent[i].ID))
 
 		_, _, _, err = h.obtainItem(tx, v.UserID, v.ItemID, v.ItemType, int64(v.Amount), requestAt)
