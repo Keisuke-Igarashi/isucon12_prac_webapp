@@ -1328,11 +1328,11 @@ func (h *Handler) receivePresent(c echo.Context) error {
 		// fmt.Printf("updateAt: %v\n", obtainPresent[i].UpdatedAt)
 		conUpdatedAt := strconv.FormatInt(obtainPresent[i].UpdatedAt, 10)
 		fmt.Printf("conUpdatedAt :%s\n", conUpdatedAt)
-		updatedAts = append(updatedAts, "'" + conUpdatedAt + "'")
-		deletedAts = append(deletedAts, "'" + conUpdatedAt + "'")
+		updatedAts = append(updatedAts, conUpdatedAt)
+		deletedAts = append(deletedAts, conUpdatedAt)
 		conObtainPresentid := strconv.FormatInt(obtainPresent[i].ID, 10)
 		fmt.Printf("conObtainPresentid :%s\n", conObtainPresentid)
-		obtainPresentids = append(obtainPresentids, "'" + conObtainPresentid + "'")
+		obtainPresentids = append(obtainPresentids, conObtainPresentid)
 		// fmt.Printf("obtainPresentids: %v\n", obtainPresent[i].ID)
 
 		_, _, _, err = h.obtainItem(tx, v.UserID, v.ItemID, v.ItemType, int64(v.Amount), requestAt)
@@ -1366,6 +1366,7 @@ func (h *Handler) receivePresent(c echo.Context) error {
 	fmt.Printf("update_bulk_query : %s\n", query)
 
 	_, err = tx.Exec(query)
+	fmt.Printf("error: %v\n", err)
 	if err != nil {
 		return errorResponse(c, http.StatusInternalServerError, err)
 	}
