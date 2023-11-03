@@ -1297,9 +1297,15 @@ func (h *Handler) receivePresent(c echo.Context) error {
 	defer tx.Rollback() //nolint:errcheck
 
     // リストを作成する
-	updatedAts := make([]string, 0)
+	/*updatedAts := make([]int64, 0)
+	deletedAts := make([]int64, 0)
+	obtainPresentids := make([]int64, 0)*/
+
+        updatedAts := make([]string, 0)
 	deletedAts := make([]string, 0)
 	obtainPresentids := make([]string, 0)
+
+
 
 
 	// 配布処理
@@ -1319,9 +1325,15 @@ func (h *Handler) receivePresent(c echo.Context) error {
 //
 
 		// リストに値を追加する
-		updatedAts = append(updatedAts, "'" + string(obtainPresent[i].UpdatedAt) + "'")
-		deletedAts = append(deletedAts, "'" + string(obtainPresent[i].UpdatedAt) + "'")
-		obtainPresentids = append(obtainPresentids, string(obtainPresent[i].ID))
+		// fmt.Printf("updateAt: %v\n", obtainPresent[i].UpdatedAt)
+		conUpdatedAt := strconv.FormatInt(obtainPresent[i].UpdatedAt, 10)
+		fmt.Printf("conUpdatedAt :%s\n", conUpdatedAt)
+		updatedAts = append(updatedAts, "'" + conUpdatedAt + "'")
+		deletedAts = append(deletedAts, "'" + conUpdatedAt + "'")
+		conObtainPresentid := strconv.FormatInt(obtainPresent[i].ID, 10)
+		fmt.Printf("conObtainPresentid :%s\n", conObtainPresentid)
+		obtainPresentids = append(obtainPresentids, "'" + conObtainPresentid + "'")
+		// fmt.Printf("obtainPresentids: %v\n", obtainPresent[i].ID)
 
 		_, _, _, err = h.obtainItem(tx, v.UserID, v.ItemID, v.ItemType, int64(v.Amount), requestAt)
 		if err != nil {
@@ -1344,19 +1356,15 @@ func (h *Handler) receivePresent(c echo.Context) error {
 	updatedAtss := strings.Join(updatedAts, ",")
 	obtainPresentidss := strings.Join(obtainPresentids, ",")
 
+	fmt.Printf("deletedAtss: %s\n", deletedAtss)
+	fmt.Printf("updatedAtss: %s\n", updatedAtss)
+	fmt.Printf("obtainPresentidss: %s\n", obtainPresentidss)
+
 	// 一括更新sqlを作成
-	query = fmt.Sprintf(`
-	UPDATE user_presents
-	SET
-		deleted_at = ELT(FIELD(id, %s), %s),
-		updated_at = ELT(FIELD(id, %s), %s)
-	WHERE id IN (%s)
-	`, obtainPresentidss, deletedAtss, obtainPresentidss, updatedAtss, obtainPresentidss)
+	query = fmt.Sprintf(`UPDATE user_presents SET deleted_at = ELT(FIELD(id, %s), %s), updated_at = ELT(FIELD(id, %s), %s) WHERE id IN (%s)`, obtainPresentidss, deletedAtss, obtainPresentidss, updatedAtss, obtainPresentidss)
 
 	fmt.Printf("update_bulk_query : %s\n", query)
 
-	// sql実行をIN仕様に直す		
-	// query = "UPDATE user_presents SET deleted_at IN (?), updated_at IN (?) WHERE id IN (?)"
 	_, err = tx.Exec(query)
 	if err != nil {
 		return errorResponse(c, http.StatusInternalServerError, err)
