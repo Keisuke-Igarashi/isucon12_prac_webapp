@@ -12,7 +12,7 @@ import (
 	"os/exec"
 	"strconv"
 	"time"
-    "strings"
+	"strings"
 	"github.com/go-sql-driver/mysql"
 	"github.com/google/uuid"
 	"github.com/jmoiron/sqlx"
@@ -1317,22 +1317,22 @@ func (h *Handler) receivePresent(c echo.Context) error {
 		obtainPresent[i].UpdatedAt = requestAt
 		obtainPresent[i].DeletedAt = &requestAt
 		v := obtainPresent[i]
-//		query = "UPDATE user_presents SET deleted_at=?, updated_at=? WHERE id=?"
-//		_, err := tx.Exec(query, requestAt, requestAt, v.ID)
-//		if err != nil {
-//			return errorResponse(c, http.StatusInternalServerError, err)
-//		}
-//
+		// query = "UPDATE user_presents SET deleted_at=?, updated_at=? WHERE id=?"
+		// _, err := tx.Exec(query, requestAt, requestAt, v.ID)
+		// if err != nil {
+		// 	return errorResponse(c, http.StatusInternalServerError, err)
+		// }
+
 
 		// リストに値を追加する
 		// fmt.Printf("updateAt: %v\n", obtainPresent[i].UpdatedAt)
 		conUpdatedAt := strconv.FormatInt(obtainPresent[i].UpdatedAt, 10)
-		fmt.Printf("conUpdatedAt :%s\n", conUpdatedAt)
-		updatedAts = append(updatedAts, conUpdatedAt)
-		deletedAts = append(deletedAts, conUpdatedAt)
+		// fmt.Printf("conUpdatedAt :%s\n", conUpdatedAt)
+		updatedAts = append(updatedAts, "'" + conUpdatedAt + "'")
+		deletedAts = append(deletedAts, "'" + conUpdatedAt + "'")
 		conObtainPresentid := strconv.FormatInt(obtainPresent[i].ID, 10)
-		fmt.Printf("conObtainPresentid :%s\n", conObtainPresentid)
-		obtainPresentids = append(obtainPresentids, conObtainPresentid)
+		// fmt.Printf("conObtainPresentid :%s\n", conObtainPresentid)
+		obtainPresentids = append(obtainPresentids, "'" + conObtainPresentid + "'")
 		// fmt.Printf("obtainPresentids: %v\n", obtainPresent[i].ID)
 
 		_, _, _, err = h.obtainItem(tx, v.UserID, v.ItemID, v.ItemType, int64(v.Amount), requestAt)
@@ -1347,26 +1347,33 @@ func (h *Handler) receivePresent(c echo.Context) error {
 		}
 	}
 
-	fmt.Printf("ここからリスト一覧")
-	fmt.Printf("%v\n", deletedAts)
-	fmt.Printf("%v\n", updatedAts)
-	fmt.Printf("%v\n", obtainPresentids)
+//	fmt.Printf("ここからリスト一覧")
+//	fmt.Printf("%v\n", deletedAts)
+//	fmt.Printf("%v\n", updatedAts)
+//	fmt.Printf("%v\n", obtainPresentids)
 
 	deletedAtss := strings.Join(deletedAts, ",")
 	updatedAtss := strings.Join(updatedAts, ",")
 	obtainPresentidss := strings.Join(obtainPresentids, ",")
 
-	fmt.Printf("deletedAtss: %s\n", deletedAtss)
-	fmt.Printf("updatedAtss: %s\n", updatedAtss)
-	fmt.Printf("obtainPresentidss: %s\n", obtainPresentidss)
+//	fmt.Printf("deletedAtss: %s\n", deletedAtss)
+//	fmt.Printf("updatedAtss: %s\n", updatedAtss)
+//	fmt.Printf("obtainPresentidss: %s\n", obtainPresentidss)
 
 	// 一括更新sqlを作成
-	query = fmt.Sprintf(`UPDATE user_presents SET deleted_at = ELT(FIELD(id, %s), %s), updated_at = ELT(FIELD(id, %s), %s) WHERE id IN (%s)`, obtainPresentidss, deletedAtss, obtainPresentidss, updatedAtss, obtainPresentidss)
+	query_bulk_update := fmt.Sprintf(`UPDATE user_presents SET deleted_at = ELT(FIELD(id, %s), %s), updated_at = ELT(FIELD(id, %s), %s) WHERE id IN (%s)`, obtainPresentidss, deletedAtss, obtainPresentidss, updatedAtss, obtainPresentidss)
 
-	fmt.Printf("update_bulk_query : %s\n", query)
+	// query_bulk_update := fmt.Sprintf(`UPDATE user_presents SET deleted_at = ELT(FIELD(id, %s), %s), updated_at = ELT(FIELD(id, %s), %s) WHERE id IN (?)`, obtainPresentidss, deletedAtss, obtainPresentidss, updatedAtss)
+//	query = "UPDATE user_presents SET deleted_at=? ,updated_at=? WHERE id IN (?)"
+	// fmt.Printf("update_bulk_query : %s\n", query_bulk_update)
 
-	_, err = tx.Exec(query)
+//	query, params, err = sqlx.In(query, requestAt, requestAt, obtainPresentids)
+//	fmt.Printf("query: %s\n", query)
+//	fmt.Printf("params: %s\n", params)
+	_, err = tx.Exec(query_bulk_update)
 	fmt.Printf("error: %v\n", err)
+
+	err = tx.Commit()
 	if err != nil {
 		return errorResponse(c, http.StatusInternalServerError, err)
 	}
