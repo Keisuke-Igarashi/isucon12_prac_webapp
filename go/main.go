@@ -13,7 +13,7 @@ import (
 	"strconv"
 	"time"
 	"strings"
-	"reflect"
+//	"reflect"
 	"slices"
 	"github.com/go-sql-driver/mysql"
 	"github.com/google/uuid"
@@ -469,7 +469,7 @@ func (h *Handler) obtainPresent(tx *sqlx.Tx, userID int64, requestAt int64) ([]*
 	
 	var already_recieved_ids []int64
 	// err_ext := tx.Select(received, query, params)
-	err_ext := tx.Select(&already_recieved_ids, query, params...)
+	err = tx.Select(&already_recieved_ids, query, params...)
 	//結果をerrの判定条件に差し替える
 
 	// user_present_all
@@ -493,9 +493,9 @@ func (h *Handler) obtainPresent(tx *sqlx.Tx, userID int64, requestAt int64) ([]*
 		//	continue
 		//}
 
-		//if err_ext != sql.ErrNoRows {
-		//	return nil, err_ext
-		//}
+		if err != nil {
+			fmt.Printf("error: %v\n",err)
+		}
 
 		pID, err := h.generateID()
 		if err != nil {
