@@ -13,6 +13,8 @@ import (
 	"strconv"
 	"time"
 	"strings"
+	"reflect"
+	"slices"
 	"github.com/go-sql-driver/mysql"
 	"github.com/google/uuid"
 	"github.com/jmoiron/sqlx"
@@ -441,34 +443,66 @@ func (h *Handler) obtainPresent(tx *sqlx.Tx, userID int64, requestAt int64) ([]*
 	}
 
 	// present_all_idのリストを作る
-	// presentAllIds := make([]string, 0, len(normalPresents))
+	normalPresentsIds := make([]interface{}, 0)
+	for _,p := range normalPresents {
+		//conNormalPresentsId := strconv.FormatInt(p.ID, 10)
+		//normalPresentsIds = append(normalPresentsIds, conNormalPresentsId)
+		normalPresentsIds = append(normalPresentsIds, p.ID)
+	}
+	
+	//normalPresentsIdss := strings.Join(normalPresentsIds, ",")
 
-	// for _,p := range normalPresents {
-	// 	presentAllIds = append(presentAllIds, string(p.ID))
-	// }
+	//fmt.Printf("normalPresentsIdss: %v\n", normalPresentsIdss)
+	//fmt.Printf("userID: %v\n", userID)
+	
+	// IN句を使ってuser_present_all_received_historyへのSELECTを先に実施する
+	
+	query_IN := fmt.Sprintf("SELECT present_all_id FROM user_present_all_received_history WHERE user_id=%v AND present_all_id IN (?)", userID)
+	// query = "SELECT user_id FROM user_present_all_received_history WHERE user_id=? AND present_all_id IN (?)"
+	
+	//received := new(UserPresentAllReceivedHistory)
+	//err_ext := tx.Get(received, query_IN, params)
+	
+	query, params, err := sqlx.In(query_IN, normalPresentsIds)
+	
+	// received := new(UserPresentAllReceivedHistory)
+	
+	var already_recieved_ids []int64
+	// err_ext := tx.Select(received, query, params)
+	err_ext := tx.Select(&already_recieved_ids, query, params...)
+	//結果をerrの判定条件に差し替える
 
 	// user_present_all
 	obtainPresents := make([]*UserPresent, 0)
 	for _, np := range normalPresents {
-		received := new(UserPresentAllReceivedHistory)
+	//	received := new(UserPresentAllReceivedHistory)
 		// query = "SELECT * FROM user_present_all_received_history WHERE user_id=? AND present_all_id=?"
-		query = "SELECT user_id FROM user_present_all_received_history WHERE user_id=? AND present_all_id=?"
+		//query = "SELECT user_id FROM user_present_all_received_history WHERE user_id=? AND present_all_id=?"
 		// query = "SELECT * FROM user_present_all_received_history WHERE user_id=? AND present_all_id IN ("+strings.Join(presentAllIds,",")+")"
 		
-		err := tx.Get(received, query, userID, np.ID)
+		//err := tx.Get(received, query, userID, np.ID)
 		// err := tx.Get(received, query, userID)
-		if err == nil {
-			// プレゼント配布済
+		//fmt.Printf("err_normal; %v\n", err)
+
+		if slices.Contains(already_recieved_ids, np.ID) {
 			continue
-		}
-		if err != sql.ErrNoRows {
-			return nil, err
-		}
+		} 
+		
+		//if err_ext == nil {
+			// プレゼント配布済
+		//	continue
+		//}
+
+		//if err_ext != sql.ErrNoRows {
+		//	return nil, err_ext
+		//}
 
 		pID, err := h.generateID()
 		if err != nil {
 			return nil, err
 		}
+
+
 		up := &UserPresent{
 			ID:             pID,
 			UserID:         userID,
@@ -484,6 +518,8 @@ func (h *Handler) obtainPresent(tx *sqlx.Tx, userID int64, requestAt int64) ([]*
 		if _, err := tx.Exec(query, up.ID, up.UserID, up.SentAt, up.ItemType, up.ItemID, up.Amount, up.PresentMessage, up.CreatedAt, up.UpdatedAt); err != nil {
 			return nil, err
 		}
+
+		fmt.Printf("user_presents_insert_query: %v\n", query)
 
 		phID, err := h.generateID()
 		if err != nil {
