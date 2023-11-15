@@ -155,6 +155,7 @@ CREATE TABLE `gacha_item_masters` (
   `created_at` bigint NOT NULL,
   PRIMARY KEY (`id`),
   UNIQUE uniq_item_id (`gacha_id`, `item_type`, `item_id`)
+  INDEX gacha_master_idx (`gacha_id`, `id`) 
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
 
 CREATE TABLE `user_items` (
