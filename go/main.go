@@ -616,7 +616,8 @@ func (h *Handler) obtainItem(tx *sqlx.Tx, userID, itemID int64, itemType int, ob
 			return nil, nil, nil, err
 		}
 
-		query = "SELECT * FROM user_items WHERE user_id=? AND item_id=?"
+		// query = "SELECT * FROM user_items WHERE user_id=? AND item_id=?"
+		query = "SELECT id, item_type, item_id, amount FROM user_items WHERE user_id=? AND item_id=?"
 		uitem := new(UserItem)
 		if err := tx.Get(uitem, query, userID, item.ID); err != nil {
 			if err != sql.ErrNoRows {
