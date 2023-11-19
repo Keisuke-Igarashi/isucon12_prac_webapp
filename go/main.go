@@ -15,6 +15,7 @@ import (
 	"strings"
 //	"reflect"
 	"slices"
+	//"sync"
 	"github.com/go-sql-driver/mysql"
 	"github.com/google/uuid"
 	"github.com/jmoiron/sqlx"
@@ -23,6 +24,8 @@ import (
 	"github.com/pkg/errors"
         // "github.com/bradfitz/gomemcache/memcache"
 )
+
+var global_id int64 = 0
 
 var (
 	ErrInvalidRequestBody       error = fmt.Errorf("invalid request body")
@@ -284,7 +287,8 @@ func (h *Handler) checkViewerID(userID int64, viewerID string) error {
 // checkBan BANされているユーザでかを確認する
 func (h *Handler) checkBan(userID int64) (bool, error) {
 	banUser := new(UserBan)
-	query := "SELECT * FROM user_bans WHERE user_id=?"
+	// query := "SELECT * FROM user_bans WHERE user_id=?"
+	query := "SELECT id FROM user_bans WHERE user_id=?"
 	if err := h.DB.Get(banUser, query, userID); err != nil {
 		if err == sql.ErrNoRows {
 			return false, nil
@@ -667,6 +671,11 @@ func (h *Handler) obtainItem(tx *sqlx.Tx, userID, itemID int64, itemType int, ob
 // initialize 初期化処理
 // POST /initialize
 func initialize(c echo.Context) error {
+
+	// fmt.Printf("初期化前のglobal_id: %v\n", global_id)
+	// global_id = 0
+
+
 	dbx, err := connectDB(true)
 	if err != nil {
 		return errorResponse(c, http.StatusInternalServerError, err)
@@ -1961,26 +1970,98 @@ func noContentResponse(c echo.Context, status int) error {
 
 // generateID ユニークなIDを生成する
 func (h *Handler) generateID() (int64, error) {
+
 	var updateErr error
+
+
 	for i := 0; i < 100; i++ {
-		res, err := h.DB.Exec("UPDATE id_generator SET id=LAST_INSERT_ID(id+1)")
-		if err != nil {
-			if merr, ok := err.(*mysql.MySQLError); ok && merr.Number == 1213 {
-				updateErr = err
-				continue
+		
+		if global_id == 0 {
+			
+			res_global_id, err := h.DB.Exec("UPDATE id_generator SET id=LAST_INSERT_ID(id+1)")
+		
+						
+				if err != nil {
+					if merr, ok := err.(*mysql.MySQLError); ok && merr.Number == 1213 {
+					
+						updateErr = err
+						continue
+
+					}
+					return 0, err
+				}
+				
+			global_id, err = res_global_id.LastInsertId()
+			
+			if err != nil {
+						
+				fmt.Printf("error: %v\n", err)
+				return 0, err
+	
+			} else {
+				fmt.Printf("global_id: %v\n", global_id)
+				return global_id, nil
 			}
-			return 0, err
+
+		} else {
+
+			global_id = global_id + 1
+			return global_id, nil
+			// fmt.Printf("global_increment_id: %v\n", global_id)
+
 		}
 
-		id, err := res.LastInsertId()
-		if err != nil {
-			return 0, err
-		}
-		return id, nil
 	}
 
 	return 0, fmt.Errorf("failed to generate id: %w", updateErr)
 }
+
+/*func (h *Handler) generateID() (int64, error) {
+	seed := time.Now().UnixNano()
+	rand.Seed(seed)
+	val := rand.uint64()
+
+	return val, nil
+}*/
+
+/////////// generatorID()のキャッシュ用処理 //////////////
+/*type Cache struct {
+	mu sync.Mutex
+	items map[int]int
+}
+
+func NewCache() *Cache {
+	m := make(map[int]int)
+	c := &Cache {
+		items: m,
+	}
+
+	return c
+}
+
+func (c *Cache) Set(key int, value int) {
+	c.mu.Lock()
+	c.items[key] = value
+	c.mu.UnLock()
+}
+
+func (c *Cache) Get(key int) int {
+	c.mu.Lock()
+	v, ok := c.items[key]
+	c.mu.Unlock()
+
+	if ok {
+		return v
+
+	}
+
+	v = HeavyGet(key)
+
+
+	c.Set(key, v)
+
+	return v
+}a*/
 
 // generateUUID UUIDの生成
 func generateUUID() (string, error) {
@@ -2245,3 +2326,4 @@ type VersionMaster struct {
 	Status        int    `json:"status" db:"status"`
 	MasterVersion string `json:"masterVersion" db:"master_version"`
 }
+
